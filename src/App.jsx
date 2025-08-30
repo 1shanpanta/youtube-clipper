@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Link2, Clock, Play, Repeat, Info, MonitorPlay, Clapperboard } from 'lucide-react';
+import  { useState, useRef, useEffect } from 'react';
+import { Link2, Clock, Play, Pause, Repeat, Info, MonitorPlay, Clapperboard, AlertTriangle } from 'lucide-react';
 
 function App() {
   const [url, setUrl] = useState('');
@@ -7,6 +7,7 @@ function App() {
   const [endTime, setEndTime] = useState('');
   const [status, setStatus] = useState('Paste a YouTube URL, set start/end times, then load and play.');
   const [apiReady, setApiReady] = useState(!!(window.YT && window.YT.Player));
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const playerInstanceRef = useRef(null);
   const loopTimerRef = useRef(null);
@@ -92,6 +93,19 @@ function App() {
     }
   };
 
+  const pauseClip = () => {
+    const player = playerInstanceRef.current;
+    if (!player || !player.pauseVideo) {
+      setStatus('No video loaded to pause.');
+      return;
+    }
+
+    stopLoop();
+    player.pauseVideo();
+    setIsPlaying(false);
+    setStatus('Clip paused.');
+  };
+
   const loadVideo = () => {
     const id = parseVideoId(url);
     if (!id) {
@@ -143,10 +157,17 @@ function App() {
       return;
     }
 
+    const duration = player.getDuration ? player.getDuration() : 0;
+    
+    // Check if end time exceeds video duration
+    if (duration > 0 && e > duration) {
+      setStatus(`End time (${e}s) exceeds video duration (${duration.toFixed(1)}s). Please adjust the end time.`);
+      return;
+    }
+
     stopLoop();
 
     let endBound = e;
-    const duration = player.getDuration ? player.getDuration() : 0;
     if (duration > 0 && endBound > duration) {
       endBound = Math.max(0, duration - 0.05);
     }
@@ -154,6 +175,7 @@ function App() {
     try {
       player.seekTo(s, true);
       player.playVideo();
+      setIsPlaying(true);
       setStatus(`Playing clip ${s.toFixed(2)}s → ${endBound.toFixed(2)}s (looping)`);
     } catch (err) {
       setStatus('Unable to play. Please try reloading the video.');
@@ -281,18 +303,36 @@ function App() {
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                  <button
-                    onClick={playClip}
-                    className="group inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2 text-sm font-medium bg-white/5 text-white/90 ring-1 ring-white/10 hover:bg-white/7 hover:ring-white/20 transition shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                    title="Play Clip"
-                  >
-                    <Play className="h-5 w-5 text-emerald-300 group-hover:text-emerald-200" />
-                    Play Clip
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={playClip}
+                      className="group inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2 text-sm font-medium bg-white/5 text-white/90 ring-1 ring-white/10 hover:bg-white/7 hover:ring-white/20 transition shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 flex-1 sm:flex-none"
+                      title="Play Clip"
+                    >
+                      <Play className="h-5 w-5 text-emerald-300 group-hover:text-emerald-200" />
+                      Play
+                    </button>
+                    <button
+                      onClick={pauseClip}
+                      className="group inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2 text-sm font-medium bg-white/5 text-white/90 ring-1 ring-white/10 hover:bg-white/7 hover:ring-white/20 transition shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 flex-1 sm:flex-none"
+                      title="Pause Clip"
+                    >
+                      <Pause className="h-5 w-5 text-red-300 group-hover:text-red-200" />
+                      Pause
+                    </button>
+                  </div>
 
-                  <div className="sm:ml-auto inline-flex items-center gap-2 text-xs sm:text-sm text-white/70 rounded-xl px-3 py-2 bg-white/5 ring-1 ring-white/10">
-                    <Repeat className="h-4 w-4 text-white/60" />
-                    Auto-loop enabled
+                  <div className="sm:ml-auto flex items-center gap-2">
+                    <div className="inline-flex items-center gap-2 text-xs sm:text-sm text-white/70 rounded-xl px-3 py-2 bg-white/5 ring-1 ring-white/10">
+                      <Repeat className="h-4 w-4 text-white/60" />
+                      Auto-loop enabled
+                    </div>
+                    <button
+                      className="group inline-flex items-center justify-center rounded-xl p-2 bg-amber-400/10 text-amber-200 ring-1 ring-amber-300/20 hover:bg-amber-400/15 hover:ring-amber-300/30 transition shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                      title="⚠️ Important Tips: 1) Don't play the same video on YouTube and this website simultaneously - it may cause playback conflicts and audio overlap. 2) Close YouTube tabs with the same video for best experience. 3) Use headphones to avoid audio feedback if testing multiple players."
+                    >
+                      <AlertTriangle className="h-4 w-4 text-amber-200 group-hover:text-amber-100" />
+                    </button>
                   </div>
                 </div>
 
@@ -302,6 +342,11 @@ function App() {
                     <Info className="h-4 w-4 mt-0.5 text-white/70" title="Status" />
                     <p className="text-sm text-white/80">{status}</p>
                   </div>
+                </div>
+
+                {/* Tips */}
+                <div className="text-[11px] sm:text-xs text-amber-200/60">
+                  ⚠️ Avoid playing the same video on YouTube and here simultaneously to prevent conflicts.
                 </div>
               </div>
             </div>
@@ -326,9 +371,6 @@ function App() {
                 <div className="aspect-video">
                   <div id="player" className="w-full h-full"></div>
                 </div>
-              </div>
-              <div className="mt-3 sm:mt-4 text-[11px] sm:text-xs text-white/45">
-                Tip: Load the video, set start and end times (in seconds), then press Play Clip.
               </div>
             </div>
           </section>
