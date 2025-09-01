@@ -8,6 +8,7 @@ function App() {
   const [status, setStatus] = useState('Paste a YouTube URL, set start/end times, then load and play.');
   const [apiReady, setApiReady] = useState(!!(window.YT && window.YT.Player));
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   const playerInstanceRef = useRef(null);
   const loopTimerRef = useRef(null);
@@ -43,6 +44,15 @@ function App() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (url && url.trim()) {
+      const debounceTimer = setTimeout(() => {
+        loadVideo();
+      }, 500);
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [url, apiReady]);
 
   const parseVideoId = (input) => {
     if (!input) return null;
@@ -133,8 +143,11 @@ function App() {
         playsinline: 1,
       },
       events: {
-        onReady: () => {
+        onReady: (event) => {
           setStatus('Video ready. Set times and click Play Clip to loop.');
+          if (playbackRate !== 1) {
+            event.target.setPlaybackRate(playbackRate);
+          }
         },
         onError: () => {
           setStatus('Failed to load video. Please verify the URL.');
@@ -173,10 +186,14 @@ function App() {
     }
 
     try {
+      if (playbackRate !== 1 && player.setPlaybackRate) {
+        player.setPlaybackRate(playbackRate);
+      }
       player.seekTo(s, true);
       player.playVideo();
       setIsPlaying(true);
-      setStatus(`Playing clip ${s.toFixed(2)}s → ${endBound.toFixed(2)}s (looping)`);
+      const rateText = playbackRate !== 1 ? ` at ${playbackRate}x speed` : '';
+      setStatus(`Playing clip ${s.toFixed(2)}s → ${endBound.toFixed(2)}s (looping)${rateText}`);
     } catch (err) {
       setStatus('Unable to play. Please try reloading the video.');
       return;
@@ -192,9 +209,11 @@ function App() {
     }, 200);
   };
 
-  const onEnterLoad = (e) => {
-    if (e.key === 'Enter') {
-      loadVideo();
+  const changePlaybackRate = (rate) => {
+    setPlaybackRate(rate);
+    const player = playerInstanceRef.current;
+    if (player && player.setPlaybackRate) {
+      player.setPlaybackRate(rate);
     }
   };
 
@@ -244,24 +263,36 @@ function App() {
                     <Link2 className="h-4 w-4 text-white/60" />
                     YouTube URL
                   </label>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                    <div className="flex-1 rounded-xl bg-white/5 ring-1 ring-white/10 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] focus-within:ring-white/20 transition min-w-0">
-                      <input
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        onKeyDown={onEnterLoad}
-                        placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                        className="w-full bg-transparent outline-none px-4 py-3 text-sm sm:text-base placeholder:text-white/35 text-white/90 focus-visible:ring-0"
-                      />
-                    </div>
-                    <button
-                      onClick={loadVideo}
-                      className="group inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-medium bg-cyan-400/10 text-cyan-200 ring-1 ring-cyan-300/20 hover:bg-cyan-400/15 hover:ring-cyan-300/30 transition shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                      title="Load Video"
-                    >
-                      <Clapperboard className="h-4 w-4 text-cyan-200 group-hover:text-cyan-100" />
-                      Load Video
-                    </button>
+                  <div className="w-full rounded-xl bg-white/5 ring-1 ring-white/10 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] focus-within:ring-white/20 transition">
+                    <input
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                      className="w-full bg-transparent outline-none px-4 py-3 text-sm sm:text-base placeholder:text-white/35 text-white/90 focus-visible:ring-0"
+                    />
+                  </div>
+                </div>
+
+                {/* Playback Speed */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/70 flex items-center gap-2 mb-1">
+                    <MonitorPlay className="h-4 w-4 text-white/60" />
+                    Playback Speed
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
+                      <button
+                        key={rate}
+                        onClick={() => changePlaybackRate(rate)}
+                        className={`px-3 py-2 text-xs rounded-lg ring-1 transition ${
+                          playbackRate === rate
+                            ? 'bg-cyan-400/20 text-cyan-200 ring-cyan-300/30'
+                            : 'bg-white/5 text-white/70 ring-white/10 hover:bg-white/10 hover:text-white/90'
+                        }`}
+                      >
+                        {rate === 0.25 || rate === 0.5 || rate === 0.75 ? `${rate}x (Slow)` : `${rate}x`}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
