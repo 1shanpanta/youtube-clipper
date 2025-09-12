@@ -257,7 +257,7 @@ function App() {
             <AlertTriangle className="h-5 w-5 text-amber-300 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-amber-200">
               <p className="font-medium mb-1">Desktop Experience Recommended</p>
-              <p className="text-amber-200/80">This app is optimized for laptop/desktop screens. While it works on mobile, the experience is not fully responsive.</p>
+              <p className="text-amber-200/80">This app is optimized for laptop/desktop screens. While it works on mobile, the experience might not be the best.</p>
             </div>
           </div>
         </div>
@@ -410,8 +410,8 @@ function App() {
             </div>
             <div className="p-3 sm:p-4 md:p-5">
               <div className="relative w-full rounded-xl bg-black/30 ring-1 ring-white/10 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_30px_rgba(0,0,0,0.45)]">
-                <div className="aspect-video">
-                  <div id="player" className="w-full h-full"></div>
+                <div className="aspect-video relative">
+                  <div id="player" className="absolute top-0 left-0 w-full h-full"></div>
                 </div>
               </div>
             </div>
