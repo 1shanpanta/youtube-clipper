@@ -135,12 +135,14 @@ function App() {
       height: '360',
       width: '640',
       videoId: id,
+      host: 'https://www.youtube-nocookie.com',
       playerVars: {
         autoplay: 0,
         modestbranding: 1,
         rel: 0,
         controls: 1,
         playsinline: 1,
+        origin: window.location.origin,
       },
       events: {
         onReady: (event) => {
@@ -156,12 +158,46 @@ function App() {
     });
   };
 
+  const parseTimeInput = (input) => {
+    if (!input || typeof input !== 'string') return NaN;
+
+    const trimmed = input.trim().toLowerCase();
+
+    // Handle pure numbers (backwards compatibility)
+    if (/^\d+\.?\d*$/.test(trimmed)) {
+      return parseFloat(trimmed);
+    }
+
+    // Handle seconds only format: "50s", "160s"
+    const secondsMatch = trimmed.match(/^(\d+\.?\d*)s$/);
+    if (secondsMatch) {
+      return parseFloat(secondsMatch[1]);
+    }
+
+    // Handle minutes and seconds format: "1m26s", "2m30s", "0m45s"
+    const minutesSecondsMatch = trimmed.match(/^(\d+)m(\d+\.?\d*)s$/);
+    if (minutesSecondsMatch) {
+      const minutes = parseInt(minutesSecondsMatch[1]);
+      const seconds = parseFloat(minutesSecondsMatch[2]);
+      return minutes * 60 + seconds;
+    }
+
+    // Handle minutes only format: "1m", "2m"
+    const minutesOnlyMatch = trimmed.match(/^(\d+)m$/);
+    if (minutesOnlyMatch) {
+      const minutes = parseInt(minutesOnlyMatch[1]);
+      return minutes * 60;
+    }
+
+    return NaN;
+  };
+
   const playClip = () => {
-    const s = parseFloat(startTime);
-    const e = parseFloat(endTime);
+    const s = parseTimeInput(startTime);
+    const e = parseTimeInput(endTime);
 
     if (isNaN(s) || isNaN(e) || s < 0 || e <= s) {
-      setStatus('Invalid times. Enter seconds only. End time must be greater than Start time.');
+      setStatus('Invalid times. Use formats like: 50, 50s, 1m26s, or 2m. End time must be greater than Start time.');
       return;
     }
     const player = playerInstanceRef.current;
@@ -312,32 +348,32 @@ function App() {
                   <div>
                     <label className="text-sm font-medium text-white/70 flex items-center gap-2 mb-1">
                       <Clock className="h-4 w-4 text-white/60" />
-                      Start (s)
+                      Start Time
                     </label>
                     <div className="rounded-xl bg-white/5 ring-1 ring-white/10 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] focus-within:ring-white/20 transition">
                       <input
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
                         onKeyDown={onEnterPlay}
-                        inputMode="decimal"
-                        placeholder="0"
-                        className="w-full bg-transparent outline-none px-4 py-3 text-sm sm:text-base placeholder:text-white/35 text-white/90"
+                        inputMode="text"
+                        placeholder="0 or 1m26s"
+                        className="w-full bg-transparent outline-none px-4 py-3 text-sm sm:text-base placeholder:text-sm placeholder:text-white/35 text-white/90"
                       />
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-white/70 flex items-center gap-2 mb-1">
                       <Clock className="h-4 w-4 text-white/60" />
-                      End (s)
+                      End Time
                     </label>
                     <div className="rounded-xl bg-white/5 ring-1 ring-white/10 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] focus-within:ring-white/20 transition">
                       <input
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
                         onKeyDown={onEnterPlay}
-                        inputMode="decimal"
-                        placeholder="10"
-                        className="w-full bg-transparent outline-none px-4 py-3 text-sm sm:text-base placeholder:text-white/35 text-white/90"
+                        inputMode="text"
+                        placeholder="10 or 2m30s"
+                        className="w-full bg-transparent outline-none px-4 py-3 text-sm sm:text-base placeholder:text-sm placeholder:text-white/35 text-white/90"
                       />
                     </div>
                   </div>
