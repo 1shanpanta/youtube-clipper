@@ -106,11 +106,17 @@ export const useUrlClipLoader = (isApiReady: boolean) => {
     return null;
   };
 
+  // Function to reset URL param load flag when user manually changes URL
+  const resetUrlParamLoad = () => {
+    setIsUrlParamLoad(false);
+  };
+
   return {
     isLoadingFromUrl,
     urlClipData,
     hasSharedClip: !!urlClipData,
     hasInitialized,
     isUrlParamLoad, // Expose this flag to prevent auto-load conflicts
+    resetUrlParamLoad, // Allow manual reset of the flag
   };
 };

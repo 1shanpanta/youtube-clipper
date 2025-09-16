@@ -77,6 +77,18 @@ export const YouTubePlayer: React.FC<VideoPlayerProps> = ({
           setPlayer(event.target);
           onReady?.();
         },
+        onStateChange: (event) => {
+          // Sync player state with our app state
+          const playerState = event.data;
+          const { setIsPlaying } = usePlayerStore.getState();
+
+          // YouTube player states: 1 = playing, 2 = paused, 0 = ended
+          if (playerState === 1) {
+            setIsPlaying(true);
+          } else if (playerState === 2 || playerState === 0) {
+            setIsPlaying(false);
+          }
+        },
         onError: (event) => {
           console.error('YouTube player error:', event.data);
           onError?.('Failed to load video. Please verify the URL.');

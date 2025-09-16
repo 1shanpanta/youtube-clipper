@@ -43,7 +43,7 @@ function App() {
   const { isApiReady, isLoading: apiLoading } = useYouTubeAPI();
 
   // URL clip loader hook with proper orchestration
-  const { isLoadingFromUrl, isUrlParamLoad } = useUrlClipLoader(isApiReady);
+  const { isLoadingFromUrl, isUrlParamLoad, resetUrlParamLoad } = useUrlClipLoader(isApiReady);
 
   // Update API ready state
   useEffect(() => {
@@ -181,6 +181,14 @@ function App() {
     }
   };
 
+  const handleUrlChange = (newUrl: string) => {
+    // Reset URL param load flag to allow auto-load for new manually entered URLs
+    if (isUrlParamLoad) {
+      resetUrlParamLoad();
+    }
+    setUrl(newUrl);
+  };
+
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -210,7 +218,7 @@ function App() {
                 {/* URL Input */}
                 <UrlInput
                   value={url}
-                  onChange={setUrl}
+                  onChange={handleUrlChange}
                   onSubmit={handlePlayClip}
                   disabled={apiLoading || isLoadingFromUrl}
                 />
@@ -254,7 +262,7 @@ function App() {
                     <ShareButton />
                     <button
                       className="group inline-flex items-center justify-center rounded-xl p-2 bg-amber-400/10 text-amber-200 ring-1 ring-amber-300/20 hover:bg-amber-400/15 hover:ring-amber-300/30 transition shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                      title="⚠️ Important Tips: 1) Don't play the same video on YouTube and this website simultaneously - it may cause playback conflicts and audio overlap. 2) Close YouTube tabs with the same video for best experience. 3) Use headphones to avoid audio feedback if testing multiple players."
+                      title="⚠️ Use headphones to avoid audio feedback if testing multiple players."
                     >
                       <AlertTriangle className="h-4 w-4 text-amber-200 group-hover:text-amber-100" />
                     </button>
